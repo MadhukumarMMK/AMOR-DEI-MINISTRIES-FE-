@@ -46,14 +46,14 @@ const ICON_MAP = {
   'seating': '💺', 'seat': '💺', 'water': '💧', 'church clean': '⛪',
   'washroom': '🚿', 'worship': '🎵', 'usher': '🤝', 'children': '👶',
   'hospitality': '🍽️', 'media': '🎬', 'prayer': '🙏', 'bible': '📖',
-  'choir': '🎼', 'drum': '🥁', 'keyboard': '🎹', 'guitar': '🎸','bathroom':'🚽','carpets':'🟫','stage':'🎭'
+  'choir': '🎼', 'drum': '🥁', 'keyboard': '🎹', 'guitar': '🎸','bathroom':'🚽','carpets':'🟫','stage':'🎭',
 };
 const getAutoIcon = (name = '') => {
   const l = name.toLowerCase();
   for (const [k, v] of Object.entries(ICON_MAP)) if (l.includes(k)) return v;
   return '✝️';
 };
-const ALL_ICONS = ['🔊', '🎸', '⚡', '🅿️', '🏮', '👟', '💝', '📢', '🧹', '🎤', '💺', '💧', '🚿', '⛪', '🎭', '🎵', '🤝', '👶', '🍽️', '🎬', '🙏', '📖', '🎼', '🥁', '🎹', '💒', '🕊️', '✝️', '📿', '🎨'];
+const ALL_ICONS = ['🔊', '🎸', '⚡', '🅿️', '🏮', '👟', '🚽','🟫','🎭','💝', '📢', '🧹', '🎤', '💺', '💧', '🚿', '⛪', '🎭', '🎵', '🤝', '👶', '🍽️', '🎬', '🙏', '📖', '🎼', '🥁', '🎹', '💒', '🕊️', '✝️', '📿', '🎨'];
 
 const nextSunday = () => {
   const d = new Date(), diff = (7 - d.getDay()) % 7 || 7;
