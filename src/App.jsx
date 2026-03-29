@@ -46,7 +46,7 @@ const ICON_MAP = {
   'seating': '💺', 'seat': '💺', 'water': '💧', 'church clean': '⛪',
   'washroom': '🚿', 'worship': '🎵', 'usher': '🤝', 'children': '👶',
   'hospitality': '🍽️', 'media': '🎬', 'prayer': '🙏', 'bible': '📖',
-  'choir': '🎼', 'drum': '🥁', 'keyboard': '🎹', 'guitar': '🎸',
+  'choir': '🎼', 'drum': '🥁', 'keyboard': '🎹', 'guitar': '🎸','bathroom':'🚽','carpets':'🟫','stage':'🎭'
 };
 const getAutoIcon = (name = '') => {
   const l = name.toLowerCase();
