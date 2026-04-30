@@ -458,12 +458,12 @@ function MainApp({ onLogout }) {
 
   /* ── CHANGE 3: Poster — fixed multi-member overlap ── */
   const generatePoster = (rosterToPrint) => {
+  try {
     const r = rosterToPrint || activeRoster;
-    if (!r) return;
+    if (!r) { showToast('No roster to generate', 'error'); return; }
     const W = 820;
     const asgn = r.assignments || [];
-    const BASE_ROW = 60, MEMBER_LINE = 0, PAD = 0;
-
+    const BASE_ROW = 64;
     const rowHeights = asgn.map(() => BASE_ROW);
     const totalRowH = rowHeights.reduce((s, h) => s + h, 0);
     const H = 300 + totalRowH + 100;
@@ -471,58 +471,117 @@ function MainApp({ onLogout }) {
     const canvas = document.createElement('canvas');
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext('2d');
+    if (!ctx) { showToast('Canvas not supported', 'error'); return; }
 
     const draw = () => {
-      ctx.strokeStyle = C.gold; ctx.lineWidth = 7; ctx.strokeRect(14, 14, W - 28, H - 28);
-      ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(212,168,67,0.35)'; ctx.strokeRect(26, 26, W - 52, H - 52);
+      try {
+        // Borders
+        ctx.strokeStyle = C.gold; ctx.lineWidth = 7;
+        ctx.strokeRect(14, 14, W - 28, H - 28);
+        ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(212,168,67,0.35)';
+        ctx.strokeRect(26, 26, W - 52, H - 52);
 
-      ctx.fillStyle = C.gold; ctx.font = 'bold 52px Georgia,serif'; ctx.textAlign = 'center'; ctx.fillText('✝', W / 2, 88);
-      ctx.fillStyle = C.goldLt; ctx.font = 'bold 32px Georgia,serif'; ctx.fillText(churchName.toUpperCase(), W / 2, 144);
-      ctx.fillStyle = 'rgba(240,244,255,0.9)'; ctx.font = '20px Georgia,serif'; ctx.fillText('SUNDAY MINISTRIES', W / 2, 178);
-      ctx.fillStyle = C.gold; ctx.font = '14px Georgia,serif'; ctx.fillText(r.date, W / 2, 204);
+        // Header cross — use plain text cross symbol
+        ctx.fillStyle = C.gold; ctx.font = 'bold 52px serif';
+        ctx.textAlign = 'center'; ctx.fillText('+', W / 2, 88);
 
-      ctx.strokeStyle = C.gold; ctx.lineWidth = 1.5; ctx.setLineDash([6, 5]);
-      ctx.beginPath(); ctx.moveTo(60, 222); ctx.lineTo(W - 60, 222); ctx.stroke(); ctx.setLineDash([]);
+        // Church name
+        ctx.fillStyle = C.goldLt; ctx.font = 'bold 32px serif';
+        ctx.fillText(churchName.toUpperCase(), W / 2, 144);
 
-      let y = 244;
-      asgn.forEach((a, i) => {
-        const min = a.ministryId;
-        const memberIds = a.memberIds || [];
-        const rH = rowHeights[i];
+        // Title & date
+        ctx.fillStyle = 'rgba(240,244,255,0.9)'; ctx.font = '20px serif';
+        ctx.fillText('SUNDAY MINISTRIES', W / 2, 178);
+        ctx.fillStyle = C.gold; ctx.font = '14px serif';
+        ctx.fillText(r.date, W / 2, 204);
 
-        // Row background
-        ctx.fillStyle = i % 2 === 0 ? 'rgba(212,168,67,0.08)' : 'rgba(255,255,255,0.02)';
-        rr(ctx, 52, y, W - 104, rH - 6, 10); ctx.fill();
+        // Dashed divider
+        ctx.strokeStyle = C.gold; ctx.lineWidth = 1.5; ctx.setLineDash([6, 5]);
+        ctx.beginPath(); ctx.moveTo(60, 222); ctx.lineTo(W - 60, 222);
+        ctx.stroke(); ctx.setLineDash([]);
 
-        // Ministry name — full width, left aligned
-        ctx.fillStyle = C.goldLt; ctx.font = 'bold 17px Georgia,serif'; ctx.textAlign = 'left';
-        ctx.fillText(`${min?.icon || '•'} ${min?.name || ''}`, 72, y + 28);
+        // Assignment rows
+        let y = 244;
+        asgn.forEach((a, i) => {
+          const min = a.ministryId;
+          const memberIds = a.memberIds || [];
+          const rH = rowHeights[i];
 
-        // Members — right aligned, stacked vertically below ministry name
-        if (memberIds.length === 0) {
-          ctx.fillStyle = '#f87171'; ctx.font = '15px Georgia,serif'; ctx.textAlign = 'right';
-          ctx.fillText('— Unassigned —', W - 74, y + 28);
-        } else {
-          const names = memberIds.map(m => m?.name || '').filter(Boolean).join('  •  ');
-          ctx.fillStyle = '#f0f4ff'; ctx.font = '15px Georgia,serif'; ctx.textAlign = 'right';
-          ctx.fillText(names, W - 74, y + 28);
-        }
+          // Row background
+          ctx.fillStyle = i % 2 === 0 ? 'rgba(212,168,67,0.08)' : 'rgba(255,255,255,0.02)';
+          rr(ctx, 52, y, W - 104, rH - 6, 10); ctx.fill();
 
-        y += rowH;
-      });
+          // Ministry name — strip emoji, use plain text only
+          const minName = (min?.name || 'Unknown').replace(/[\u{1F300}-\u{1FFFF}]/gu, '').trim();
+          ctx.fillStyle = C.goldLt; ctx.font = 'bold 17px serif';
+          ctx.textAlign = 'left';
+          ctx.fillText(minName, 72, y + 36);
 
-      ctx.strokeStyle = C.gold; ctx.lineWidth = 1.5; ctx.setLineDash([6, 5]);
-      ctx.beginPath(); ctx.moveTo(60, y + 8); ctx.lineTo(W - 60, y + 8); ctx.stroke(); ctx.setLineDash([]);
+          // Member names — horizontal, joined
+          if (memberIds.length === 0) {
+            ctx.fillStyle = '#f87171'; ctx.font = '15px serif';
+            ctx.textAlign = 'right';
+            ctx.fillText('-- Unassigned --', W - 74, y + 36);
+          } else {
+            const names = memberIds
+              .map(m => m?.name || '')
+              .filter(Boolean)
+              .join('  |  ');
+            ctx.fillStyle = '#f0f4ff'; ctx.font = '15px serif';
+            ctx.textAlign = 'right';
+            ctx.fillText(names, W - 74, y + 36);
+          }
 
-      ctx.fillStyle = C.gold; ctx.font = '14px Georgia,serif'; ctx.textAlign = 'center'; ctx.fillText('May God bless your service! 🙏', W / 2, H - 54);
-      ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.font = '11px sans-serif'; ctx.fillText('AMOR DEI MINISTRIES', W / 2, H - 32);
+          y += rH;
+        });
 
-      setPosterImg(canvas.toDataURL('image/png')); setShowPreview(true);
+        // Bottom divider
+        ctx.strokeStyle = C.gold; ctx.lineWidth = 1.5; ctx.setLineDash([6, 5]);
+        ctx.beginPath(); ctx.moveTo(60, y + 8); ctx.lineTo(W - 60, y + 8);
+        ctx.stroke(); ctx.setLineDash([]);
+
+        // Footer
+        ctx.fillStyle = C.gold; ctx.font = '14px serif'; ctx.textAlign = 'center';
+        ctx.fillText('May God bless your service!', W / 2, H - 54);
+        ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.font = '11px sans-serif';
+        ctx.fillText('AMOR DEI MINISTRIES', W / 2, H - 32);
+
+        setPosterImg(canvas.toDataURL('image/png'));
+        setShowPreview(true);
+      } catch (drawErr) {
+        console.error('Draw error:', drawErr);
+        showToast('Failed to draw poster: ' + drawErr.message, 'error');
+      }
     };
 
-    if (bgImage) { const img = new Image(); img.onload = () => { ctx.drawImage(img, 0, 0, W, H); ctx.fillStyle = 'rgba(4,9,26,0.82)'; ctx.fillRect(0, 0, W, H); draw(); }; img.src = bgImage; }
-    else { const g = ctx.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#04091a'); g.addColorStop(0.5, '#0a1628'); g.addColorStop(1, '#04091a'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); draw(); }
-  };
+    if (bgImage) {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0, W, H);
+        ctx.fillStyle = 'rgba(4,9,26,0.82)';
+        ctx.fillRect(0, 0, W, H);
+        draw();
+      };
+      img.onerror = () => {
+        showToast('Background image failed to load', 'error');
+        setBgImage(null);
+      };
+      img.src = bgImage;
+    } else {
+      const g = ctx.createLinearGradient(0, 0, W, H);
+      g.addColorStop(0, '#04091a');
+      g.addColorStop(0.5, '#0a1628');
+      g.addColorStop(1, '#04091a');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+      draw();
+    }
+  } catch (err) {
+    console.error('Poster error:', err);
+    showToast('Poster generation failed: ' + err.message, 'error');
+  }
+};
 
   /* ══ RENDER SECTIONS ══════════════════════════════════════════════════ */
 
