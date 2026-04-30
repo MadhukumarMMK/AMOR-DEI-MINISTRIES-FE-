@@ -462,13 +462,9 @@ function MainApp({ onLogout }) {
     if (!r) return;
     const W = 820;
     const asgn = r.assignments || [];
-    const BASE_ROW = 48, MEMBER_LINE = 30, PAD = 16;
+    const BASE_ROW = 60, MEMBER_LINE = 0, PAD = 0;
 
-    // Pre-calculate row heights
-    const rowHeights = asgn.map(a => {
-      const cnt = Math.max(1, (a.memberIds || []).length);
-      return BASE_ROW + cnt * MEMBER_LINE + PAD;
-    });
+    const rowHeights = asgn.map(() => BASE_ROW);
     const totalRowH = rowHeights.reduce((s, h) => s + h, 0);
     const H = 300 + totalRowH + 100;
 
@@ -505,18 +501,14 @@ function MainApp({ onLogout }) {
         // Members — right aligned, stacked vertically below ministry name
         if (memberIds.length === 0) {
           ctx.fillStyle = '#f87171'; ctx.font = '15px Georgia,serif'; ctx.textAlign = 'right';
-          ctx.fillText('— Unassigned —', W - 72, y + 28);
+          ctx.fillText('— Unassigned —', W - 74, y + 28);
         } else {
-          memberIds.forEach((mem, mi) => {
-            const my = y + 28 + mi * MEMBER_LINE + (mi === 0 ? 0 : 4);
-            ctx.fillStyle = 'rgba(212,168,67,0.5)'; ctx.font = '13px Georgia,serif'; ctx.textAlign = 'right';
-            ctx.fillText('•', W - 72, my);
-            ctx.fillStyle = '#f0f4ff'; ctx.font = '15px Georgia,serif';
-            ctx.fillText(mem?.name || '', W - 88, my);
-          });
+          const names = memberIds.map(m => m?.name || '').filter(Boolean).join('  •  ');
+          ctx.fillStyle = '#f0f4ff'; ctx.font = '15px Georgia,serif'; ctx.textAlign = 'right';
+          ctx.fillText(names, W - 74, y + 28);
         }
 
-        y += rH;
+        y += rowH;
       });
 
       ctx.strokeStyle = C.gold; ctx.lineWidth = 1.5; ctx.setLineDash([6, 5]);
